@@ -1,0 +1,426 @@
+{
+  "description": "Test payloads for WhatsApp Triage & Auto-Reply Agent Phase 1 testing",
+  "totalPayloads": 25,
+  "categories": {
+    "urgent": 5,
+    "important": 5,
+    "routine": 5,
+    "spam": 5,
+    "ambiguous": 5
+  },
+  "whatsappAppSecret": "test_app_secret_1234567890abcdef",
+  "phoneNumberId": "123456789012345",
+  "businessPhoneNumber": "1234567890",
+  "payloads": [
+    {
+      "id": 1,
+      "category": "urgent",
+      "description": "Urgent message - server down",
+      "from": "919876543210",
+      "contactName": "John Doe",
+      "message": "Urgent: Server is down! Need immediate help!",
+      "expectedClassification": "urgent",
+      "expectedAction": "notification_sent",
+      "timestamp": "1700000000001"
+    },
+    {
+      "id": 2,
+      "category": "urgent",
+      "description": "Emergency request",
+      "from": "919876543211",
+      "contactName": "Jane Smith",
+      "message": "Emergency: Payment gateway failed, customers can't checkout!",
+      "expectedClassification": "urgent",
+      "expectedAction": "notification_sent",
+      "timestamp": "1700000000002"
+    },
+    {
+      "id": 3,
+      "category": "urgent",
+      "description": "Critical system issue",
+      "from": "919876543212",
+      "contactName": "Bob Johnson",
+      "message": "CRITICAL: Database connection lost, all services down!",
+      "expectedClassification": "urgent",
+      "expectedAction": "notification_sent",
+      "timestamp": "1700000000003"
+    },
+    {
+      "id": 4,
+      "category": "urgent",
+      "description": "Immediate help needed",
+      "from": "919876543213",
+      "contactName": "Alice Brown",
+      "message": "Help me now! Website is not loading for any user!",
+      "expectedClassification": "urgent",
+      "expectedAction": "notification_sent",
+      "timestamp": "1700000000004"
+    },
+    {
+      "id": 5,
+      "category": "urgent",
+      "description": "Emergency situation",
+      "from": "919876543214",
+      "contactName": "Charlie Wilson",
+      "message": "This is an emergency! Security breach detected!",
+      "expectedClassification": "urgent",
+      "expectedAction": "notification_sent",
+      "timestamp": "1700000000005"
+    },
+    {
+      "id": 6,
+      "category": "important",
+      "description": "Contract review request",
+      "from": "919876543215",
+      "contactName": "David Lee",
+      "message": "Can you review this contract before EOD?",
+      "expectedClassification": "important",
+      "expectedAction": "notification_sent",
+      "timestamp": "1700000000006"
+    },
+    {
+      "id": 7,
+      "category": "important",
+      "description": "Meeting reminder",
+      "from": "919876543216",
+      "contactName": "Eve Davis",
+      "message": "Meeting at 3pm tomorrow in conference room A",
+      "expectedClassification": "important",
+      "expectedAction": "notification_sent",
+      "timestamp": "1700000000007"
+    },
+    {
+      "id": 8,
+      "category": "important",
+      "description": "Invoice check request",
+      "from": "919876543217",
+      "contactName": "Frank Miller",
+      "message": "Please check the invoice #INV-2024-001 and approve",
+      "expectedClassification": "important",
+      "expectedAction": "notification_sent",
+      "timestamp": "1700000000008"
+    },
+    {
+      "id": 9,
+      "category": "important",
+      "description": "Project update",
+      "from": "919876543218",
+      "contactName": "Grace Taylor",
+      "message": "Important update on project Alpha - need your feedback",
+      "expectedClassification": "important",
+      "expectedAction": "notification_sent",
+      "timestamp": "1700000000009"
+    },
+    {
+      "id": 10,
+      "category": "important",
+      "description": "Approval needed",
+      "from": "919876543219",
+      "contactName": "Henry Moore",
+      "message": "Need your approval on the marketing campaign budget",
+      "expectedClassification": "important",
+      "expectedAction": "notification_sent",
+      "timestamp": "1700000000010"
+    },
+    {
+      "id": 11,
+      "category": "routine",
+      "description": "Business hours inquiry",
+      "from": "919876543220",
+      "contactName": "Ivy Clark",
+      "message": "What are your business hours?",
+      "expectedClassification": "routine",
+      "expectedAction": "auto_replied",
+      "timestamp": "1700000000011"
+    },
+    {
+      "id": 12,
+      "category": "routine",
+      "description": "Contact information request",
+      "from": "919876543221",
+      "contactName": "Jack Lewis",
+      "message": "How can I contact you?",
+      "expectedClassification": "routine",
+      "expectedAction": "auto_replied",
+      "timestamp": "1700000000012"
+    },
+    {
+      "id": 13,
+      "category": "routine",
+      "description": "Services inquiry",
+      "from": "919876543222",
+      "contactName": "Kate Walker",
+      "message": "What services do you offer?",
+      "expectedClassification": "routine",
+      "expectedAction": "auto_replied",
+      "timestamp": "1700000000013"
+    },
+    {
+      "id": 14,
+      "category": "routine",
+      "description": "Thank you message",
+      "from": "919876543223",
+      "contactName": "Leo Hall",
+      "message": "Thank you!",
+      "expectedClassification": "routine",
+      "expectedAction": "auto_replied",
+      "timestamp": "1700000000014"
+    },
+    {
+      "id": 15,
+      "category": "routine",
+      "description": "Greeting",
+      "from": "919876543224",
+      "contactName": "Mia Young",
+      "message": "Hello!",
+      "expectedClassification": "routine",
+      "expectedAction": "auto_replied",
+      "timestamp": "1700000000015"
+    },
+    {
+      "id": 16,
+      "category": "spam",
+      "description": "Scam message - free iPhone",
+      "from": "919876543225",
+      "contactName": "Unknown",
+      "message": "Win a free iPhone! Click here to claim now!",
+      "expectedClassification": "spam",
+      "expectedAction": "ignored",
+      "timestamp": "1700000000016"
+    },
+    {
+      "id": 17,
+      "category": "spam",
+      "description": "Phishing link",
+      "from": "919876543226",
+      "contactName": "Unknown",
+      "message": "Click this link to claim your prize: http://bit.ly/fake-prize",
+      "expectedClassification": "spam",
+      "expectedAction": "ignored",
+      "timestamp": "1700000000017"
+    },
+    {
+      "id": 18,
+      "category": "spam",
+      "description": "Lottery scam",
+      "from": "919876543227",
+      "contactName": "Unknown",
+      "message": "You have won a lottery of $1,000,000! Reply to claim.",
+      "expectedClassification": "spam",
+      "expectedAction": "ignored",
+      "timestamp": "1700000000018"
+    },
+    {
+      "id": 19,
+      "category": "spam",
+      "description": "Fake urgent message",
+      "from": "919876543228",
+      "contactName": "Unknown",
+      "message": "URGENT: Your account will be closed in 24 hours! Verify now.",
+      "expectedClassification": "spam",
+      "expectedAction": "ignored",
+      "timestamp": "1700000000019"
+    },
+    {
+      "id": 20,
+      "category": "spam",
+      "description": "Get rich quick scam",
+      "from": "919876543229",
+      "contactName": "Unknown",
+      "message": "Make money fast! Limited time offer!",
+      "expectedClassification": "spam",
+      "expectedAction": "ignored",
+      "timestamp": "1700000000020"
+    },
+    {
+      "id": 21,
+      "category": "ambiguous",
+      "description": "General question",
+      "from": "919876543230",
+      "contactName": "Noah Wright",
+      "message": "What do you think about this?",
+      "expectedClassification": "ambiguous",
+      "expectedAction": "queued",
+      "timestamp": "1700000000021"
+    },
+    {
+      "id": 22,
+      "category": "ambiguous",
+      "description": "Discussion request",
+      "from": "919876543231",
+      "contactName": "Olivia Green",
+      "message": "Can we discuss?",
+      "expectedClassification": "ambiguous",
+      "expectedAction": "queued",
+      "timestamp": "1700000000022"
+    },
+    {
+      "id": 23,
+      "category": "ambiguous",
+      "description": "Question",
+      "from": "919876543232",
+      "contactName": "Patrick Adams",
+      "message": "I have a question",
+      "expectedClassification": "ambiguous",
+      "expectedAction": "queued",
+      "timestamp": "1700000000023"
+    },
+    {
+      "id": 24,
+      "category": "ambiguous",
+      "description": "Request for information",
+      "from": "919876543233",
+      "contactName": "Quinn Baker",
+      "message": "Let me know",
+      "expectedClassification": "ambiguous",
+      "expectedAction": "queued",
+      "timestamp": "1700000000024"
+    },
+    {
+      "id": 25,
+      "category": "ambiguous",
+      "description": "Advice request",
+      "from": "919876543234",
+      "contactName": "Ryan Carter",
+      "message": "Please advise",
+      "expectedClassification": "ambiguous",
+      "expectedAction": "queued",
+      "timestamp": "1700000000025"
+    }
+  ],
+  "webhookPayloadTemplate": {
+    "object": "whatsapp_business_account",
+    "entry": [
+      {
+        "id": "{{ENTRY_ID}}",
+        "changes": [
+          {
+            "value": {
+              "messaging_product": "whatsapp",
+              "metadata": {
+                "display_phone_number": "{{BUSINESS_PHONE}}",
+                "phone_number_id": "{{PHONE_NUMBER_ID}}"
+              },
+              "contacts": [
+                {
+                  "profile": {
+                    "name": "{{CONTACT_NAME}}"
+                  },
+                  "wa_id": "{{FROM}}"
+                }
+              ],
+              "messages": [
+                {
+                  "from": "{{FROM}}",
+                  "id": "wamid.{{MESSAGE_ID}}",
+                  "timestamp": "{{TIMESTAMP}}",
+                  "type": "text",
+                  "text": {
+                    "body": "{{MESSAGE}}"
+                  }
+                }
+              ]
+            },
+            "field": "messages"
+          }
+        ]
+      }
+    ]
+  },
+  "signatureGeneration": {
+    "description": "Generate HMAC-SHA256 signature for webhook payload",
+    "appSecret": "test_app_secret_1234567890abcdef",
+    "command": "echo -n 'PAYLOAD' | openssl dgst -sha256 -hmac 'test_app_secret_1234567890abcdef' | cut -d' ' -f2",
+    "nodeCommand": "node -e \"const crypto = require('crypto'); const hmac = crypto.createHmac('sha256', 'test_app_secret_1234567890abcdef'); hmac.update('PAYLOAD'); console.log('sha256=' + hmac.digest('hex'));\""
+  },
+  "testScript": {
+    "description": "Node.js script to send all test payloads",
+    "filename": "send-test-payloads.js",
+    "content": "const axios = require('axios');
+const crypto = require('crypto');
+const fs = require('fs');
+
+const APP_SECRET = 'test_app_secret_1234567890abcdef';
+const WEBHOOK_URL = 'http://localhost:3001/api/webhook';
+const PHONE_NUMBER_ID = '123456789012345';
+const BUSINESS_PHONE = '1234567890';
+
+function generateSignature(payload) {
+  const hmac = crypto.createHmac('sha256', APP_SECRET);
+  hmac.update(payload);
+  return 'sha256=' + hmac.digest('hex');
+}
+
+function buildWebhookPayload(messageData) {
+  return {
+    object: 'whatsapp_business_account',
+    entry: [{
+      id: `10234567890${messageData.id}`,
+      changes: [{
+        value: {
+          messaging_product: 'whatsapp',
+          metadata: {
+            display_phone_number: BUSINESS_PHONE,
+            phone_number_id: PHONE_NUMBER_ID,
+          },
+          contacts: [{
+            profile: {
+              name: messageData.contactName,
+            },
+            wa_id: messageData.from,
+          }],
+          messages: [{
+            from: messageData.from,
+            id: `wamid.${Date.now()}${messageData.id}`,
+            timestamp: messageData.timestamp,
+            type: 'text',
+            text: {
+              body: messageData.message,
+            },
+          }],
+        },
+        field: 'messages',
+      }],
+    }],
+  };
+}
+
+async function sendTestPayloads() {
+  const payloads = JSON.parse(fs.readFileSync('./test-payloads.json', 'utf8')).payloads;
+  
+  for (const payloadData of payloads) {
+    const webhookPayload = buildWebhookPayload(payloadData);
+    const payloadString = JSON.stringify(webhookPayload);
+    const signature = generateSignature(payloadString);
+    
+    try {
+      const response = await axios.post(WEBHOOK_URL, webhookPayload, {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Hub-Signature-256': signature,
+        },
+      });
+      
+      console.log(`[${payloadData.id}] ${payloadData.category}: ${payloadData.message.substring(0, 50)}...`);
+      console.log(`  Status: ${response.status} - ${response.statusText}`);
+      console.log(`  Expected: ${payloadData.expectedClassification} -> ${payloadData.expectedAction}`);
+      console.log('');
+      
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    } catch (error) {
+      console.error(`[${payloadData.id}] Error:`, error.message);
+      if (error.response) {
+        console.error('  Response:', error.response.status, error.response.statusText);
+        console.error('  Data:', error.response.data);
+      }
+      console.log('');
+    }
+  }
+  
+  console.log('All test payloads sent!');
+}
+
+sendTestPayloads().catch(console.error);
+"
+  }
+}
