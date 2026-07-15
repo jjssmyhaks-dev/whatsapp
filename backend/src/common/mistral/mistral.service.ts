@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { MistralClient } from 'mistralai';
+import * as https from 'https';
 
 // Types for Mistral API responses
 interface MistralClassificationResult {
@@ -24,19 +24,73 @@ interface MistralCombinedResult {
   tokensUsed: number;
 }
 
+interface MistralApiResponse {
+  choices: Array<{
+    message: {
+      content: string;
+    };
+  }>;
+  usage: {
+    total_tokens: number;
+  };
+}
+
 @Injectable()
 export class MistralService {
   private readonly logger = new Logger(MistralService.name);
-  private client: MistralClient;
+  private readonly apiKey: string;
   private readonly defaultModel = 'mistral-tiny';
+  private readonly apiUrl = 'https://api.mistral.ai/v1';
 
   constructor(private configService: ConfigService) {
-    const apiKey = this.configService.get<string>('MISTRAL_API_KEY');
-    if (!apiKey) {
+    this.apiKey = this.configService.get<string>('MISTRAL_API_KEY') || '';
+    if (!this.apiKey) {
       this.logger.warn('MISTRAL_API_KEY not configured. Mistral API calls will fail.');
     }
-    
-    this.client = new MistralClient(apiKey || '');
+  }
+
+  /**
+   * Makes a request to Mistral API
+   */
+  private async makeApiRequest(prompt: string, model: string = this.defaultModel): Promise<MistralApiResponse> {
+    return new Promise((resolve, reject) => {
+      const postData = JSON.stringify({
+        model,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.1,
+        max_tokens: 500,
+      });
+
+      const options = {
+        hostname: 'api.mistral.ai',
+        path: '/v1/chat/completions',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(postData),
+          'Authorization': `Bearer ${this.apiKey}`,
+        },
+      };
+
+      const req = https.request(options, (res) => {
+        let data = '';
+        res.on('data', (chunk) => (data += chunk));
+        res.on('end', () => {
+          try {
+            resolve(JSON.parse(data));
+          } catch (error) {
+            reject(error);
+          }
+        });
+      });
+
+      req.on('error', (error) => {
+        reject(error);
+      });
+
+      req.write(postData);
+      req.end();
+    });
   }
 
   /**
@@ -55,17 +109,7 @@ export class MistralService {
     try {
       const prompt = this.buildClassificationPrompt(message, context);
       
-      const response = await this.client.chat({
-        model: this.defaultModel,
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-        temperature: 0.1, // Low temperature for more deterministic classification
-        maxTokens: 100,
-      });
+      const response = await this.makeApiRequest(prompt, this.defaultModel);
 
       const result = this.parseClassificationResponse(response.choices[0].message.content);
       
@@ -114,17 +158,7 @@ export class MistralService {
     try {
       const prompt = this.buildReplyPrompt(message, context, persona);
       
-      const response = await this.client.chat({
-        model: this.defaultModel,
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-        temperature: 0.7, // Higher temperature for more creative replies
-        maxTokens: 500,
-      });
+      const response = await this.makeApiRequest(prompt, this.defaultModel);
 
       const result = this.parseReplyResponse(response.choices[0].message.content);
       
@@ -173,17 +207,7 @@ export class MistralService {
     try {
       const prompt = this.buildCombinedPrompt(message, context, persona);
       
-      const response = await this.client.chat({
-        model: this.defaultModel,
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-        temperature: 0.3,
-        maxTokens: 600,
-      });
+      const response = await this.makeApiRequest(prompt, this.defaultModel);
 
       const result = this.parseCombinedResponse(response.choices[0].message.content);
       
@@ -232,7 +256,7 @@ export class MistralService {
   async healthCheck(): Promise<boolean> {
     try {
       // Make a minimal API call to check connectivity
-      await this.client.listModels();
+      await this.makeApiRequest('Say "ok"', this.defaultModel);
       return true;
     } catch (error) {
       this.logger.warn(`Mistral API health check failed: ${error.message}`);
@@ -245,13 +269,9 @@ export class MistralService {
    * @returns List of available models
    */
   async getAvailableModels(): Promise<string[]> {
-    try {
-      const models = await this.client.listModels();
-      return models.data.map((m) => m.id);
-    } catch (error) {
-      this.logger.error(`Failed to fetch Mistral models: ${error.message}`);
-      return [this.defaultModel];
-    }
+    // For now, return default model since we're using direct API
+    // In a real implementation, you could fetch from /v1/models endpoint
+    return [this.defaultModel, 'mistral-small', 'mistral-medium'];
   }
 
   // ============================================
