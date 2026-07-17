@@ -1,494 +1,263 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Filter, MoreVertical, RefreshCw, Send } from 'lucide-react';
-import { getClassificationColor, getStatusColor, formatRelativeTime, truncate } from '@/lib/utils';
-import { Thread, Message } from '@/types';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Search, RefreshCw, Send, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { threadsApi, messagesApi } from '@/lib/api';
+import { getClassificationColor, getStatusColor, formatRelativeTime } from '@/lib/utils';
+import type { Thread, Message } from '@/types';
 
-// Mock data for demo
-const mockThreads: Thread[] = [
-  {
-    id: '1',
-    userId: 'user-1',
-    contactId: 'contact-1',
-    threadKey: 'thread-1',
-    lastMessageId: 'msg-1',
-    lastHumanReplyAt: null,
-    slaDeadline: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-    followUpSent: false,
-    followUpCount: 0,
-    status: 'open',
-    priority: 'urgent',
-    assigneeId: null,
-    metadata: {},
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString(),
-    contact: {
-      id: 'contact-1',
-      userId: 'user-1',
-      phoneNumber: '+1234567890',
-      displayName: 'John Doe',
-      whatsappName: 'John Doe',
-      isVip: true,
-      tags: ['customer'],
-      profileImageUrl: null,
-      lastMessageAt: new Date().toISOString(),
-      messageCount: 5,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-  },
-  {
-    id: '2',
-    userId: 'user-1',
-    contactId: 'contact-2',
-    threadKey: 'thread-2',
-    lastMessageId: 'msg-2',
-    lastHumanReplyAt: null,
-    slaDeadline: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-    followUpSent: false,
-    followUpCount: 0,
-    status: 'open',
-    priority: 'important',
-    assigneeId: null,
-    metadata: {},
-    createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString(),
-    contact: {
-      id: 'contact-2',
-      userId: 'user-1',
-      phoneNumber: '+1234567891',
-      displayName: 'Jane Smith',
-      whatsappName: 'Jane Smith',
-      isVip: false,
-      tags: ['lead'],
-      profileImageUrl: null,
-      lastMessageAt: new Date().toISOString(),
-      messageCount: 3,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-  },
-  {
-    id: '3',
-    userId: 'user-1',
-    contactId: 'contact-3',
-    threadKey: 'thread-3',
-    lastMessageId: 'msg-3',
-    lastHumanReplyAt: new Date().toISOString(),
-    slaDeadline: null,
-    followUpSent: false,
-    followUpCount: 0,
-    status: 'closed',
-    priority: 'normal',
-    assigneeId: null,
-    metadata: {},
-    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString(),
-    contact: {
-      id: 'contact-3',
-      userId: 'user-1',
-      phoneNumber: '+1234567892',
-      displayName: 'Bob Johnson',
-      whatsappName: 'Bob Johnson',
-      isVip: false,
-      tags: ['support'],
-      profileImageUrl: null,
-      lastMessageAt: new Date().toISOString(),
-      messageCount: 12,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-  },
-];
-
-// Mock messages
-const mockMessages: Message[] = [
-  {
-    id: 'msg-1',
-    threadId: '1',
-    userId: 'user-1',
-    direction: 'inbound',
-    rawText: 'This is urgent! I need help immediately with my order.',
-    payload: {},
-    classification: 'urgent',
-    confidence: 0.95,
-    actionTaken: 'notification_sent',
-    templateId: null,
-    mistralPrompt: null,
-    mistralResponse: null,
-    mistralModel: null,
-    mistralTokensUsed: null,
-    fastPathHit: true,
-    fastPathType: 'keyword',
-    processingTimeMs: 150,
-    whatsappMessageId: 'whatsapp-1',
-    whatsappStatus: 'delivered',
-    errorMessage: null,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'msg-2',
-    threadId: '1',
-    userId: 'user-1',
-    direction: 'outbound',
-    rawText: 'Thank you for your message. We will respond shortly.',
-    payload: {},
-    classification: null,
-    confidence: null,
-    actionTaken: 'auto_replied',
-    templateId: 'template-1',
-    mistralPrompt: null,
-    mistralResponse: null,
-    mistralModel: null,
-    mistralTokensUsed: null,
-    fastPathHit: true,
-    fastPathType: 'keyword',
-    processingTimeMs: 50,
-    whatsappMessageId: 'whatsapp-2',
-    whatsappStatus: 'sent',
-    errorMessage: null,
-    createdAt: new Date().toISOString(),
-  },
-];
-
-// Thread list item
-function ThreadItem({ thread, onSelect }: { thread: Thread; onSelect: (thread: Thread) => void }) {
-  const [isSelected, setIsSelected] = useState(false);
-
+function ThreadItem({ thread, selected, onSelect }: { thread: Thread; selected: boolean; onSelect: () => void }) {
   return (
     <div
-      className={`border rounded-lg p-4 cursor-pointer transition-all ${isSelected ? 'bg-muted/50 border-primary' : 'hover:bg-muted/50'}`}
-      onClick={() => {
-        setIsSelected(true);
-        onSelect(thread);
-      }}
+      className={`border rounded-lg p-3 cursor-pointer transition-all ${
+        selected ? 'bg-muted border-primary' : 'hover:bg-muted/50'
+      }`}
+      onClick={onSelect}
     >
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-3">
         <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-          <span className="text-sm font-medium">
-            {thread.contact?.displayName ? thread.contact.displayName.slice(0, 2).toUpperCase() : '?'}
-          </span>
+          <span className="text-sm font-medium">{(thread.contact?.displayName || '?').slice(0, 2).toUpperCase()}</span>
         </div>
-        
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="font-medium">{thread.contact?.displayName || thread.contact?.phoneNumber || 'Unknown'}</span>
-            {thread.contact?.isVip && (
-              <Badge variant="secondary" className="text-xs">VIP</Badge>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="font-medium text-sm">{thread.contact?.displayName || thread.contact?.phoneNumber || 'Unknown'}</span>
+            {thread.contact?.isVip && <Badge variant="secondary" className="text-xs px-1">VIP</Badge>}
+            <Badge className={`text-xs ${getStatusColor(thread.status)}`}>{thread.status}</Badge>
+          </div>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            {thread.priority && thread.priority !== 'normal' && (
+              <Badge className={`text-xs ${getClassificationColor(thread.priority)}`}>{thread.priority}</Badge>
             )}
-            <Badge className={getStatusColor(thread.status)}>
-              {thread.status}
-            </Badge>
-            <Badge className={getClassificationColor(thread.priority)}>
-              {thread.priority}
-            </Badge>
+            <span className="text-xs text-muted-foreground">{formatRelativeTime(thread.updatedAt)}</span>
           </div>
-          
-          <div className="text-sm text-muted-foreground">
-            Last message: {formatRelativeTime(thread.updatedAt)}
-          </div>
-        </div>
-        
-        <div className="flex flex-col items-end gap-1">
-          <span className="text-sm text-muted-foreground">
-            {thread.messageCount} messages
-          </span>
-          {thread.followUpSent && (
-            <Badge variant="outline" className="text-xs">Follow-up sent</Badge>
-          )}
         </div>
       </div>
     </div>
   );
 }
 
-// Message item
-function MessageItem({ message }: { message: Message }) {
+function MessageBubble({ message }: { message: Message }) {
+  const isInbound = message.direction === 'inbound';
   return (
-    <div className={`flex gap-3 p-3 rounded-lg ${message.direction === 'inbound' ? 'bg-muted/50' : 'bg-primary/10'}`}>
-      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-        <span className="text-xs">
-          {message.direction === 'inbound' ? '📩' : '📤'}
-        </span>
+    <div className={`flex gap-3 p-3 rounded-lg ${isInbound ? 'bg-muted/50' : 'bg-primary/10'}`}>
+      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 text-sm">
+        {isInbound ? '📩' : '📤'}
       </div>
-      
-      <div className="flex-1">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-sm font-medium">
-            {message.direction === 'inbound' ? 'Customer' : 'You'}
-          </span>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-medium">{isInbound ? 'Customer' : 'You'}</span>
           {message.classification && (
-            <Badge className={getClassificationColor(message.classification)}>
-              {message.classification}
-            </Badge>
+            <Badge className={`text-xs ${getClassificationColor(message.classification)}`}>{message.classification}</Badge>
           )}
-          {message.fastPathHit && (
-            <Badge variant="outline" className="text-xs">
-              Fast-path: {message.fastPathType}
-            </Badge>
-          )}
-        </div>
-        
-        <p className="text-sm">{message.rawText}</p>
-        
-        <div className="flex items-center gap-4 mt-1">
-          <span className="text-xs text-muted-foreground">
-            {formatRelativeTime(message.createdAt)}
-          </span>
           {message.actionTaken && (
-            <Badge variant="outline" className="text-xs">
-              {message.actionTaken}
-            </Badge>
-          )}
-          {message.templateId && (
-            <Badge variant="outline" className="text-xs">
-              Template
-            </Badge>
+            <Badge variant="outline" className="text-xs">{message.actionTaken.replace('_', ' ')}</Badge>
           )}
         </div>
+        <p className="text-sm mt-1">{message.rawText}</p>
+        <p className="text-xs text-muted-foreground mt-1">{formatRelativeTime(message.createdAt)}</p>
       </div>
     </div>
-  );
-}
-
-// Message input
-function MessageInput({ threadId, onSend }: { threadId: string; onSend: (text: string) => void }) {
-  const [text, setText] = useState('');
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (text.trim()) {
-      onSend(text);
-      setText('');
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="border-t p-4">
-      <div className="flex gap-2">
-        <Input
-          type="text"
-          placeholder="Type your message..."
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          className="flex-1"
-        />
-        <Button type="submit" size="icon">
-          <Send className="h-4 w-4" />
-        </Button>
-      </div>
-    </form>
   );
 }
 
 export default function InboxPage() {
   const router = useRouter();
-  const [threads, setThreads] = useState<Thread[]>(mockThreads);
+  const [threads, setThreads] = useState<Thread[]>([]);
   const [selectedThread, setSelectedThread] = useState<Thread | null>(null);
-  const [messages, setMessages] = useState<Message[]>(mockMessages);
-  const [filter, setFilter] = useState<'all' | 'open' | 'closed' | 'urgent' | 'important'>('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [replyText, setReplyText] = useState('');
+  const [filter, setFilter] = useState('all');
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    // Check if user is authenticated
     const token = localStorage.getItem('accessToken');
-    if (!token) {
-      router.push('/login');
-    }
+    if (!token) { router.push('/login'); return; }
+    fetchThreads();
   }, [router]);
 
-  const filteredThreads = threads.filter((thread) => {
-    // Filter by status
-    if (filter === 'all') return true;
-    if (filter === 'open' && thread.status !== 'open') return false;
-    if (filter === 'closed' && thread.status !== 'closed') return false;
-    if (filter === 'urgent' && thread.priority !== 'urgent') return false;
-    if (filter === 'important' && thread.priority !== 'important') return false;
-
-    // Filter by search
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      return (
-        (thread.contact?.displayName?.toLowerCase().includes(query) || false) ||
-        (thread.contact?.phoneNumber?.includes(query) || false)
-      );
+  async function fetchThreads() {
+    try {
+      setLoading(true);
+      setError('');
+      const params: any = {};
+      if (filter !== 'all') {
+        if (['urgent', 'important', 'routine'].includes(filter)) params.priority = filter;
+        else params.status = filter;
+      }
+      if (search) params.search = search;
+      const res = await threadsApi.list(params);
+      setThreads(res.data.threads || []);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to load threads');
+    } finally {
+      setLoading(false);
     }
+  }
 
-    return true;
-  });
-
-  const handleThreadSelect = (thread: Thread) => {
+  async function fetchMessages(thread: Thread) {
     setSelectedThread(thread);
-    // In a real implementation, fetch messages for this thread
-    setMessages(mockMessages);
-  };
+    setMessages([]);
+    try {
+      setMessagesLoading(true);
+      const res = await messagesApi.list(thread.id);
+      setMessages(res.data.messages || []);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to load messages');
+    } finally {
+      setMessagesLoading(false);
+    }
+  }
 
-  const handleSendMessage = (text: string) => {
-    // In a real implementation, send message via API
-    const newMessage: Message = {
-      id: `msg-${Date.now()}`,
-      threadId: selectedThread!.id,
-      userId: 'user-1',
-      direction: 'outbound',
-      rawText: text,
-      payload: {},
-      classification: null,
-      confidence: null,
-      actionTaken: 'human_replied',
-      templateId: null,
-      mistralPrompt: null,
-      mistralResponse: null,
-      mistralModel: null,
-      mistralTokensUsed: null,
-      fastPathHit: false,
-      fastPathType: null,
-      processingTimeMs: null,
-      whatsappMessageId: null,
-      whatsappStatus: 'pending',
-      errorMessage: null,
-      createdAt: new Date().toISOString(),
-    };
-    setMessages([...messages, newMessage]);
-  };
+  async function handleSend() {
+    if (!replyText.trim() || !selectedThread) return;
+    try {
+      setSending(true);
+      await messagesApi.send(selectedThread.id, { text: replyText });
+      setReplyText('');
+      fetchMessages(selectedThread);
+      fetchThreads();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to send message');
+    } finally {
+      setSending(false);
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
+    <div className="min-h-screen bg-background">
+      {/* Top Bar */}
+      <div className="border-b bg-background sticky top-0 z-10">
+        <div className="flex items-center justify-between p-4 max-w-screen-2xl mx-auto">
           <div>
-            <h1 className="text-2xl font-bold">Inbox</h1>
-            <p className="text-muted-foreground">Manage your WhatsApp conversations</p>
+            <h1 className="text-xl font-bold">Inbox</h1>
+            <p className="text-sm text-muted-foreground">{threads.length} threads</p>
           </div>
-          <Button variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={fetchThreads} disabled={loading}>
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
         </div>
-
-        <Tabs defaultValue="inbox" className="space-y-4">
-          <TabsList className="grid w-full md:w-auto md:grid-cols-3 lg:grid-cols-5">
-            <TabsTrigger value="inbox">Inbox</TabsTrigger>
-            <TabsTrigger value="urgent">Urgent</TabsTrigger>
-            <TabsTrigger value="important">Important</TabsTrigger>
-            <TabsTrigger value="routine">Routine</TabsTrigger>
-            <TabsTrigger value="closed">Closed</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="inbox" className="space-y-4">
-            {/* Filters */}
-            <div className="flex flex-col md:flex-row gap-4 mb-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Search threads..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              
-              <Select value={filter} onValueChange={setFilter as any}>
-                <SelectTrigger className="w-[180px]">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Filter" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Threads</SelectItem>
-                  <SelectItem value="open">Open</SelectItem>
-                  <SelectItem value="closed">Closed</SelectItem>
-                  <SelectItem value="urgent">Urgent</SelectItem>
-                  <SelectItem value="important">Important</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Thread List */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredThreads.map((thread) => (
-                <ThreadItem
-                  key={thread.id}
-                  thread={thread}
-                  onSelect={handleThreadSelect}
-                />
-              ))}
-            </div>
-          </TabsContent>
-
-          {['urgent', 'important', 'routine', 'closed'].map((tab) => (
-            <TabsContent key={tab} value={tab} className="space-y-4">
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredThreads
-                  .filter((t) => {
-                    if (tab === 'urgent') return t.priority === 'urgent';
-                    if (tab === 'important') return t.priority === 'important';
-                    if (tab === 'routine') return t.priority === 'normal' || t.priority === 'low';
-                    if (tab === 'closed') return t.status === 'closed';
-                    return true;
-                  })
-                  .map((thread) => (
-                    <ThreadItem
-                      key={thread.id}
-                      thread={thread}
-                      onSelect={handleThreadSelect}
-                    />
-                  ))}
-              </div>
-            </TabsContent>
-          ))}
-        </Tabs>
       </div>
 
-      {/* Thread Detail Sidebar (for larger screens) */}
-      {selectedThread && (
-        <div className="fixed right-0 top-0 bottom-0 w-full lg:w-96 bg-background border-l shadow-lg transform translate-x-0 lg:translate-x-0 z-50">
-          <div className="flex h-full flex-col">
-            {/* Header */}
-            <div className="border-b p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                    <span className="text-sm font-medium">
-                      {selectedThread.contact?.displayName?.slice(0, 2).toUpperCase() || '?'}
-                    </span>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">{selectedThread.contact?.displayName || 'Unknown'}</h3>
-                    <p className="text-sm text-muted-foreground">{selectedThread.contact?.phoneNumber}</p>
-                  </div>
-                </div>
-                <Button variant="ghost" size="icon" onClick={() => setSelectedThread(null)}>
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
+      {error && (
+        <div className="max-w-screen-2xl mx-auto px-4 pt-4">
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </div>
+      )}
+
+      <div className="max-w-screen-2xl mx-auto flex h-[calc(100vh-73px)]">
+        {/* Thread List Sidebar */}
+        <div className={`${selectedThread ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-96 border-r overflow-hidden`}>
+          {/* Filters */}
+          <div className="p-3 border-b space-y-2">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search..." className="pl-8 h-9" value={search} onChange={e => setSearch(e.target.value)} />
+            </div>
+            <div className="flex gap-2">
+              <Tabs value={filter} onValueChange={setFilter} className="w-full">
+                <TabsList className="w-full grid grid-cols-5 h-8">
+                  <TabsTrigger value="all" className="text-xs px-1">All</TabsTrigger>
+                  <TabsTrigger value="urgent" className="text-xs px-1">Urgent</TabsTrigger>
+                  <TabsTrigger value="important" className="text-xs px-1">Important</TabsTrigger>
+                  <TabsTrigger value="open" className="text-xs px-1">Open</TabsTrigger>
+                  <TabsTrigger value="closed" className="text-xs px-1">Closed</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+          </div>
+
+          {/* Thread List */}
+          <div className="flex-1 overflow-y-auto p-2 space-y-1">
+            {loading ? (
+              <div className="space-y-2 p-2">{[1,2,3,4,5].map(i => <div key={i} className="animate-pulse h-16 bg-muted rounded-lg" />)}</div>
+            ) : threads.length === 0 ? (
+              <div className="p-8 text-center text-muted-foreground">
+                <p className="font-medium">No threads found</p>
+                <p className="text-sm">Messages will appear here when contacts message you</p>
               </div>
-            </div>
-
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {messages.map((message) => (
-                <MessageItem key={message.id} message={message} />
-              ))}
-            </div>
-
-            {/* Input */}
-            {selectedThread && (
-              <MessageInput
-                threadId={selectedThread.id}
-                onSend={handleSendMessage}
-              />
+            ) : (
+              threads.map(t => (
+                <ThreadItem key={t.id} thread={t} selected={selectedThread?.id === t.id} onSelect={() => fetchMessages(t)} />
+              ))
             )}
           </div>
         </div>
-      )}
+
+        {/* Message Panel */}
+        <div className={`${selectedThread ? 'flex' : 'hidden md:flex'} flex-col flex-1`}>
+          {!selectedThread ? (
+            <div className="flex-1 flex items-center justify-center text-muted-foreground">
+              <div className="text-center">
+                <p className="text-lg font-medium">Select a conversation</p>
+                <p className="text-sm">Choose a thread from the list to view messages</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Thread Header */}
+              <div className="border-b p-3 flex items-center gap-3">
+                <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSelectedThread(null)}>
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-sm font-medium">
+                  {selectedThread.contact?.displayName?.slice(0, 2).toUpperCase() || '?'}
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{selectedThread.contact?.displayName || 'Unknown'}</span>
+                    {selectedThread.contact?.isVip && <Badge variant="secondary" className="text-xs">VIP</Badge>}
+                  </div>
+                  <p className="text-xs text-muted-foreground">{selectedThread.contact?.phoneNumber}</p>
+                </div>
+              </div>
+
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {messagesLoading ? (
+                  <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="animate-pulse h-16 bg-muted rounded-lg" />)}</div>
+                ) : messages.length === 0 ? (
+                  <div className="h-full flex items-center justify-center text-muted-foreground text-sm">No messages yet</div>
+                ) : (
+                  messages.map(m => <MessageBubble key={m.id} message={m} />)
+                )}
+              </div>
+
+              {/* Reply Input */}
+              <div className="border-t p-3">
+                <form onSubmit={e => { e.preventDefault(); handleSend(); }} className="flex gap-2">
+                  <Input
+                    placeholder="Type your reply..."
+                    value={replyText}
+                    onChange={e => setReplyText(e.target.value)}
+                    disabled={sending}
+                    className="flex-1"
+                  />
+                  <Button type="submit" size="icon" disabled={sending || !replyText.trim()}>
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </form>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
