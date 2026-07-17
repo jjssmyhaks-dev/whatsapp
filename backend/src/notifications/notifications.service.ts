@@ -324,7 +324,7 @@ export class NotificationsService {
         userId,
       });
 
-      return result.affected && result.affected > 0;
+      return (result.affected ?? 0) > 0;
     } catch (error) {
       this.logger.error({
         message: 'Failed to delete notification',

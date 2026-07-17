@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { TemplatesService } from '../templates/templates.service';
-import { UrgencyRulesService } from '../urgency-rules/urgency-rules.service';
+import { TemplatesService } from '../../templates/templates.service';
+import { UrgencyRulesService } from '../../urgency-rules/urgency-rules.service';
 
 const DEFAULT_TEMPLATES = [
   {

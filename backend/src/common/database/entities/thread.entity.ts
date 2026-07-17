@@ -49,7 +49,7 @@ export class Thread {
   priority: 'low' | 'normal' | 'high' | 'urgent';
 
   @Column({ name: 'assignee_id', type: 'uuid', nullable: true })
-  assigneeId: string;
+  assigneeId: string | null;
 
   @Column({ type: 'jsonb', default: {} })
   metadata: Record<string, any>;

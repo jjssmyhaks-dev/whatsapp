@@ -26,8 +26,8 @@ export class WhatsAppConnection {
   @Column({ name: 'access_token_encrypted', type: 'text', nullable: false })
   accessTokenEncrypted: string;
 
-  @Column({ name: 'webhook_verify_token', nullable: true })
-  webhookVerifyToken: string;
+  @Column({ name: 'webhook_verify_token', nullable: true, type: 'varchar' })
+  webhookVerifyToken: string | null;
 
   @Column({ default: 'pending' })
   status: 'pending' | 'active' | 'inactive' | 'error';

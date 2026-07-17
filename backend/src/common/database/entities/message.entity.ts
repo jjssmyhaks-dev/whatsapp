@@ -39,7 +39,7 @@ export class Message {
   confidence: number;
 
   @Column({ name: 'action_taken', nullable: true })
-  actionTaken: 'auto_replied' | 'notification_sent' | 'queued' | 'ignored' | 'human_replied';
+  actionTaken: 'auto_replied' | 'notification_sent' | 'queued' | 'ignored' | 'human_replied' | 'error';
 
   @Column({ name: 'template_id', type: 'uuid', nullable: true })
   templateId: string;
@@ -60,7 +60,7 @@ export class Message {
   fastPathHit: boolean;
 
   @Column({ name: 'fast_path_type', nullable: true })
-  fastPathType: 'keyword' | 'embedding' | 'regex';
+  fastPathType: 'keyword' | 'embedding' | 'regex' | 'vip_override';
 
   @Column({ name: 'processing_time_ms', type: 'integer', nullable: true })
   processingTimeMs: number;

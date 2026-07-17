@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TriageService } from './triage.service';
@@ -19,25 +19,15 @@ import { WebhookModule } from '../webhook/webhook.module';
       name: 'follow-up-scheduler',
       defaultJobOptions: {
         attempts: 3,
-        backoff: {
-          type: 'exponential',
-          delay: 1000,
-        },
+        backoff: { type: 'exponential', delay: 1000 },
         removeOnComplete: true,
         removeOnFail: false,
       },
     }),
-    TypeOrmModule.forFeature([
-      Message,
-      Thread,
-      Template,
-      UrgencyRule,
-      Contact,
-      Notification,
-    ]),
+    TypeOrmModule.forFeature([Message, Thread, Template, UrgencyRule, Contact, Notification]),
     TemplatesModule,
     NotificationsModule,
-    WebhookModule,
+    forwardRef(() => WebhookModule),
   ],
   providers: [TriageService, TriageProcessor],
   exports: [TriageService],

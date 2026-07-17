@@ -14,11 +14,11 @@ import { WebhookService } from '../webhook/webhook.service';
 import { NotificationsService } from '../notifications/notifications.service';
 
 // Types for triage results
-interface TriageResult {
+export interface TriageResult {
   messageId: string;
   classification: 'urgent' | 'important' | 'routine' | 'spam' | 'ambiguous';
   confidence: number;
-  action: 'auto_replied' | 'notification_sent' | 'queued' | 'ignored';
+  action: 'auto_replied' | 'notification_sent' | 'queued' | 'ignored' | 'error';
   replyText?: string;
   templateId?: string;
   fastPathHit: boolean;
@@ -223,6 +223,7 @@ export class TriageService {
       
       for (const template of templates) {
         try {
+          if (!template.triggerEmbedding) continue;
           const embedding = JSON.parse(template.triggerEmbedding) as number[];
           const similarity = this.embeddingsService.cosineSimilarity(
             embedding,
@@ -460,7 +461,7 @@ export class TriageService {
     userId: string,
   ): Promise<{
     classification: 'urgent' | 'important' | 'routine' | 'spam' | 'ambiguous';
-    confidence: number;
+    classificationConfidence: number;
     reply: string;
     replyConfidence: number;
     reasoning: string;

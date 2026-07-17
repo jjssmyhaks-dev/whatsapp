@@ -22,7 +22,7 @@ export class Template {
   triggerIntent: string;
 
   @Column({ name: 'trigger_embedding', type: 'text', nullable: true })
-  triggerEmbedding: string;
+  triggerEmbedding: string | null;
 
   @Column({ name: 'reply_text', type: 'text', nullable: false })
   replyText: string;

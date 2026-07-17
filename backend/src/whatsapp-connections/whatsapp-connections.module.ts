@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { WhatsAppConnectionsService } from './whatsapp-connections.service';
 import { WhatsAppConnectionsController } from './whatsapp-connections.controller';
@@ -10,7 +10,7 @@ import { WebhookModule } from '../webhook/webhook.module';
   imports: [
     TypeOrmModule.forFeature([WhatsAppConnection]),
     EncryptionModule,
-    WebhookModule,
+    forwardRef(() => WebhookModule),
   ],
   controllers: [WhatsAppConnectionsController],
   providers: [WhatsAppConnectionsService],

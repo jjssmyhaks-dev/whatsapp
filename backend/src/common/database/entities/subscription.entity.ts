@@ -24,12 +24,12 @@ export class Subscription {
   @Index()
   razorpayCustomerId: string;
 
-  @Column({ name: 'razorpay_subscription_id', nullable: true })
+  @Column({ name: 'razorpay_subscription_id', nullable: true, type: 'varchar' })
   @Index()
-  razorpaySubscriptionId: string;
+  razorpaySubscriptionId: string | null;
 
-  @Column({ name: 'razorpay_plan_id', nullable: true })
-  razorpayPlanId: string;
+  @Column({ name: 'razorpay_plan_id', nullable: true, type: 'varchar' })
+  razorpayPlanId: string | null;
 
   @Column({ name: 'billing_cycle', default: 'monthly' })
   billingCycle: 'monthly' | 'quarterly' | 'yearly';

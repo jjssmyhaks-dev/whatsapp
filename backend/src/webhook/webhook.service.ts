@@ -288,7 +288,7 @@ export class WebhookService {
         },
         {
           jobId: `msg_${messageEntity.id}`,
-          priority: contact.isVip ? 'high' : 'normal',
+          priority: contact.isVip ? 1 : 0,
         },
       );
 
@@ -396,8 +396,8 @@ export class WebhookService {
     phoneNumberId: string,
     to: string,
     templateName: string,
-    parameters?: Array<{ type: string; text?: string; [key: string]: any }>,
     accessToken: string,
+    parameters?: Array<{ type: string; text?: string; [key: string]: any }>,
   ): Promise<any> {
     const apiVersion = this.configService.get<string>('WHATSAPP_API_VERSION', 'v18.0');
     const baseUrl = `https://graph.facebook.com/${apiVersion}`;

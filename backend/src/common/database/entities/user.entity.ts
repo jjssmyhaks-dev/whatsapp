@@ -30,11 +30,11 @@ export class User {
   @Column({ name: 'verification_token_expires', type: 'timestamp', nullable: true })
   verificationTokenExpires: Date;
 
-  @Column({ nullable: true })
-  resetToken: string;
+  @Column({ nullable: true, type: 'varchar' })
+  resetToken: string | null;
 
   @Column({ name: 'reset_token_expires', type: 'timestamp', nullable: true })
-  resetTokenExpires: Date;
+  resetTokenExpires: Date | null;
 
   @Column({ name: 'last_login', type: 'timestamp', nullable: true })
   lastLogin: Date;

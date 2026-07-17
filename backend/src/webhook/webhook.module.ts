@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { WebhookController } from './webhook.controller';
@@ -15,21 +15,13 @@ import { TriageModule } from '../triage/triage.module';
       name: 'message-processing',
       defaultJobOptions: {
         attempts: 3,
-        backoff: {
-          type: 'exponential',
-          delay: 1000,
-        },
+        backoff: { type: 'exponential', delay: 1000 },
         removeOnComplete: true,
         removeOnFail: false,
       },
     }),
-    TypeOrmModule.forFeature([
-      WhatsAppConnection,
-      Message,
-      Thread,
-      Contact,
-    ]),
-    TriageModule,
+    TypeOrmModule.forFeature([WhatsAppConnection, Message, Thread, Contact]),
+    forwardRef(() => TriageModule),
   ],
   controllers: [WebhookController],
   providers: [WebhookService],
