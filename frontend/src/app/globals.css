@@ -2,67 +2,64 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── 11 Build luxury minimal design system ── */
+/* ── Triage landing page design system ── */
 @layer base {
   :root {
-    --background: 60 6% 97%;
-    --foreground: 60 3% 10%;
+    --background: 48 10% 98%;
+    --foreground: 160 15% 12%;
     --card: 0 0% 100%;
-    --card-foreground: 60 3% 10%;
+    --card-foreground: 160 15% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 60 3% 10%;
-    --primary: 42 15% 21%;
-    --primary-foreground: 60 6% 97%;
-    --secondary: 45 10% 92%;
-    --secondary-foreground: 42 15% 21%;
-    --muted: 45 10% 92%;
-    --muted-foreground: 30 3% 40%;
-    --accent: 45 10% 92%;
-    --accent-foreground: 42 15% 21%;
-    --destructive: 0 72% 42%;
-    --destructive-foreground: 60 6% 97%;
-    --border: 40 8% 88%;
-    --input: 40 8% 88%;
-    --ring: 42 15% 21%;
-    --radius: 0.5rem;
+    --popover-foreground: 160 15% 12%;
+    --primary: 155 52% 45%;
+    --primary-foreground: 0 0% 99%;
+    --secondary: 130 8% 96%;
+    --secondary-foreground: 160 12% 16%;
+    --muted: 140 8% 95%;
+    --muted-foreground: 160 6% 44%;
+    --accent: 130 40% 85%;
+    --accent-foreground: 160 15% 12%;
+    --destructive: 0 72% 48%;
+    --destructive-foreground: 0 0% 99%;
+    --border: 150 8% 88%;
+    --input: 150 8% 88%;
+    --ring: 155 52% 45%;
+    --radius: 0.75rem;
   }
 
   .dark {
-    --background: 60 3% 7%;
-    --foreground: 45 20% 93%;
-    --card: 60 3% 10%;
-    --card-foreground: 45 20% 93%;
-    --popover: 60 3% 10%;
-    --popover-foreground: 45 20% 93%;
-    --primary: 45 30% 82%;
-    --primary-foreground: 60 3% 7%;
-    --secondary: 30 3% 16%;
-    --secondary-foreground: 45 20% 93%;
-    --muted: 30 3% 16%;
-    --muted-foreground: 30 3% 58%;
-    --accent: 30 3% 16%;
-    --accent-foreground: 45 20% 93%;
-    --destructive: 0 62% 50%;
-    --destructive-foreground: 45 20% 93%;
-    --border: 30 3% 18%;
-    --input: 30 3% 18%;
-    --ring: 45 30% 82%;
+    --background: 160 15% 7%;
+    --foreground: 0 0% 98%;
+    --card: 160 10% 10%;
+    --card-foreground: 0 0% 98%;
+    --popover: 160 10% 10%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 155 40% 55%;
+    --primary-foreground: 160 15% 7%;
+    --secondary: 160 8% 16%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 160 8% 16%;
+    --muted-foreground: 155 5% 58%;
+    --accent: 160 8% 16%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62% 55%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 160 5% 18%;
+    --input: 160 5% 18%;
+    --ring: 155 40% 55%;
   }
 }
 
 @layer base {
   * { @apply border-border; }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
     font-family: 'Inter', 'SF Pro Display', system-ui, sans-serif;
-    font-weight: 350;
-    letter-spacing: -0.01em;
-    -webkit-font-smoothing: antialiased;
   }
 }
 
-/* ── Build typography ── */
-h1, h2, h3, h4 { font-weight: 400; letter-spacing: -0.02em; line-height: 1.15; }
+/* ── Typography ── */
+h1, h2, h3, h4 { @apply font-semibold tracking-tight; }
 
 /* ── Selection ── */
-::selection { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+::selection { @apply bg-primary text-primary-foreground; }

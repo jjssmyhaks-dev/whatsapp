@@ -2,11 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Bell, RefreshCw, CheckCheck, AlertTriangle, BellOff } from 'lucide-react';
+import { Bell, CheckCheck, BellOff } from 'lucide-react';
 import { notificationsApi } from '@/lib/api';
 import { formatRelativeTime } from '@/lib/utils';
 import type { Notification } from '@/types';
@@ -14,131 +11,90 @@ import type { Notification } from '@/types';
 export default function NotificationsPage() {
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    if (!token) { router.push('/login'); return; }
+    if (!localStorage.getItem('accessToken')) { router.push('/login'); return; }
     fetchNotifications();
-  }, [router]);
+  }, []);
 
   async function fetchNotifications() {
-    try {
-      setLoading(true);
-      setError('');
+    try { setLoading(true); setError('');
       const res = await notificationsApi.list();
       setNotifications(res.data.notifications || []);
-      setTotal(res.data.total || 0);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load notifications');
-    } finally {
-      setLoading(false);
-    }
+    } catch (err: any) { setError(err.response?.data?.message || 'Failed to load'); }
+    finally { setLoading(false); }
   }
 
   async function handleMarkRead(id: string) {
-    try {
-      await notificationsApi.markAsRead(id);
-      fetchNotifications();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to mark as read');
-    }
+    try { await notificationsApi.markAsRead(id); fetchNotifications(); } catch {}
   }
 
   async function handleMarkAllRead() {
-    try {
-      await notificationsApi.markAllAsRead();
-      fetchNotifications();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to mark all as read');
-    }
-  }
-
-  function getTypeBadge(type: string) {
-    switch (type) {
-      case 'urgent': return <Badge variant="destructive" className="text-xs">🔴 Urgent</Badge>;
-      case 'important': return <Badge className="bg-orange-500 text-white text-xs">🟠 Important</Badge>;
-      case 'follow_up': return <Badge variant="secondary" className="text-xs">🔔 Follow-up</Badge>;
-      default: return <Badge variant="outline" className="text-xs">{type}</Badge>;
-    }
+    try { await notificationsApi.markAllAsRead(); fetchNotifications(); } catch {}
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">Notifications</h1>
-            <p className="text-muted-foreground">{total} notifications • Alerts you never miss important messages</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleMarkAllRead}>
-              <CheckCheck className="h-4 w-4 mr-1" />Mark All Read
-            </Button>
-            <Button variant="outline" size="sm" onClick={fetchNotifications} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            </Button>
-          </div>
+    <div className="min-h-screen">
+      <section className="mx-auto max-w-3xl px-6 pt-12 pb-8">
+        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/70 px-3 py-1 text-xs font-medium text-muted-foreground">
+          <span className="h-1.5 w-1.5 rounded-full bg-primary" />Notifications
         </div>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">What needs your <span className="italic font-[family-name:var(--font-display)]">attention</span>.</h1>
+            <p className="mt-2 text-muted-foreground">{notifications.length} alerts</p>
+          </div>
+          <button onClick={handleMarkAllRead} className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 text-sm font-medium hover:bg-muted transition">
+            <CheckCheck className="h-4 w-4" />Mark All Read
+          </button>
+        </div>
+      </section>
 
-        {error && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+      <section className="mx-auto max-w-3xl px-6 pb-20">
+        {error && <div className="mb-4 p-3 rounded-xl border border-destructive/20 bg-destructive/5 text-sm text-destructive">{error}</div>}
 
         {loading ? (
-          <div className="space-y-2">{[1,2,3,4,5].map(i => <div key={i} className="animate-pulse h-20 bg-muted rounded-lg" />)}</div>
+          <div className="space-y-2">{[1,2,3,4,5].map(i => <div key={i} className="animate-pulse h-20 rounded-2xl bg-muted" />)}</div>
         ) : notifications.length === 0 ? (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <BellOff className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-1">No Notifications</h3>
-              <p className="text-muted-foreground">You're all caught up! Notifications appear here when urgent or important messages arrive.</p>
-            </CardContent>
-          </Card>
+          <div className="py-20 text-center">
+            <BellOff className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-30" />
+            <h3 className="text-lg font-semibold mb-1">All caught up</h3>
+            <p className="text-muted-foreground text-sm">Notifications appear when urgent or important messages arrive</p>
+          </div>
         ) : (
-          <div className="space-y-2">
-            {notifications.map((n) => (
-              <Card key={n.id} className={!n.read ? 'border-l-4 border-l-primary' : 'opacity-75'}>
-                <CardContent className="p-4 flex items-start justify-between gap-3">
+          <div className="space-y-1.5">
+            {notifications.map(n => (
+              <div key={n.id} className={`rounded-2xl border bg-background p-4 transition shadow-[0_1px_2px_rgba(0,0,0,.03),0_4px_12px_-4px_rgba(0,0,0,.06)] ${!n.read ? 'border-l-primary border-l-[3px]' : 'opacity-60'}`}>
+                <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
-                    <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      n.notificationType === 'urgent' ? 'bg-red-100 dark:bg-red-900 text-red-600' :
-                      n.notificationType === 'important' ? 'bg-orange-100 dark:bg-orange-900 text-orange-600' :
-                      'bg-muted'
-                    }`}>
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${n.notificationType === 'urgent' ? 'bg-destructive/10 text-destructive' : n.notificationType === 'important' ? 'bg-amber-500/10 text-amber-600' : 'bg-muted'}`}>
                       <Bell className="h-4 w-4" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className="font-medium text-sm">{n.title || n.notificationType}</span>
-                        {getTypeBadge(n.notificationType)}
-                        {!n.read && <div className="w-2 h-2 rounded-full bg-primary" />}
+                        <span className="font-semibold text-sm">{n.title || n.notificationType}</span>
+                        <Badge className={`text-xs px-1.5 ${n.notificationType === 'urgent' ? 'bg-destructive/10 text-destructive' : n.notificationType === 'important' ? 'bg-amber-500/10 text-amber-700' : ''}`}>
+                          {n.notificationType === 'urgent' ? '🔴 Urgent' : n.notificationType === 'important' ? '🟠 Important' : '🔔 Follow-up'}
+                        </Badge>
+                        {!n.read && <span className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />}
                       </div>
                       <p className="text-sm text-muted-foreground">{n.body}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-muted-foreground">{formatRelativeTime(n.createdAt)}</span>
-                        {n.payload?.contactName && (
-                          <span className="text-xs text-muted-foreground">• From: {n.payload.contactName}</span>
-                        )}
-                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">{formatRelativeTime(n.createdAt)}</p>
                     </div>
                   </div>
                   {!n.read && (
-                    <Button variant="ghost" size="sm" onClick={() => handleMarkRead(n.id)}>
-                      <CheckCheck className="h-3 w-3 mr-1" />Read
-                    </Button>
+                    <button onClick={() => handleMarkRead(n.id)} className="flex-shrink-0 rounded-full border border-border px-3 py-1 text-xs font-medium hover:bg-muted transition">
+                      Read
+                    </button>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }
