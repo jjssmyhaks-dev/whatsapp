@@ -3,12 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Mail, Lock, ArrowRight, AlertTriangle } from 'lucide-react';
 import { authApi } from '@/lib/api';
 
 export default function LoginPage() {
@@ -19,102 +13,70 @@ export default function LoginPage() {
   const [error, setError] = useState('');
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
-    if (!email.trim() || !password) {
-      setError('Please fill in all fields');
-      return;
-    }
+    e.preventDefault(); setError('');
     try {
       setLoading(true);
       const res = await authApi.login({ email, password });
       localStorage.setItem('accessToken', res.data.accessToken);
-      localStorage.setItem('user', JSON.stringify(res.data.user));
       router.push('/');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
-    } finally {
-      setLoading(false);
-    }
+      setError('Invalid credentials');
+    } finally { setLoading(false); }
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6">
-      <Card className="w-full max-w-md">
-        <form onSubmit={handleSubmit}>
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <MessageSquareIcon />
+    <div className="min-h-screen flex">
+      {/* Left panel — brand */}
+      <div className="hidden lg:flex w-1/2 bg-accent relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-accent via-accent/90 to-accent/70" />
+        <div className="relative flex flex-col justify-end p-16">
+          <p className="text-xs tracking-widest uppercase text-accent-foreground/50 mb-4">WhatsApp Copilot</p>
+          <h1 className="text-5xl font-light text-accent-foreground leading-tight">
+            Messages that matter,<br />handled with care.
+          </h1>
+          <p className="mt-6 text-sm text-accent-foreground/60 max-w-sm font-light">
+            Smart triage for every WhatsApp message. Urgent things surface. Routine things answer themselves.
+          </p>
+        </div>
+      </div>
+
+      {/* Right panel — form */}
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="w-full max-w-sm">
+          <div className="lg:hidden mb-10">
+            <p className="text-xs tracking-widest uppercase text-muted-foreground mb-2">WhatsApp Copilot</p>
+            <h2 className="text-3xl font-light">Sign in</h2>
+          </div>
+
+          <h2 className="hidden lg:block text-3xl font-light mb-8">Sign in</h2>
+
+          {error && <div className="mb-6 p-3 border border-destructive/20 bg-destructive/5 text-sm text-destructive rounded-lg">{error}</div>}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label htmlFor="email" className="block text-xs tracking-wide text-muted-foreground mb-1.5">Email</label>
+              <input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)}
+                className="w-full px-0 py-2 bg-transparent border-0 border-b border-border focus:border-foreground outline-none text-base font-light transition-colors placeholder:text-muted-foreground/40"
+                placeholder="you@example.com" autoFocus disabled={loading} />
             </div>
-            <CardTitle className="text-2xl">Welcome Back</CardTitle>
-            <CardDescription>Sign in to your WhatsApp Triage dashboard</CardDescription>
-          </CardHeader>
-
-          <CardContent className="space-y-4">
-            {error && (
-              <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  className="pl-10"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={loading}
-                  autoFocus
-                />
-              </div>
+            <div>
+              <label htmlFor="password" className="block text-xs tracking-wide text-muted-foreground mb-1.5">Password</label>
+              <input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)}
+                className="w-full px-0 py-2 bg-transparent border-0 border-b border-border focus:border-foreground outline-none text-base font-light transition-colors placeholder:text-muted-foreground/40"
+                placeholder="••••••••" disabled={loading} />
             </div>
+            <button type="submit" disabled={loading}
+              className="w-full py-3 bg-foreground text-background text-sm font-light tracking-wide hover:opacity-90 disabled:opacity-50 transition-opacity">
+              {loading ? 'Signing in…' : 'Sign in'}
+            </button>
+          </form>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  className="pl-10"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading}
-                />
-              </div>
-            </div>
-          </CardContent>
-
-          <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign In'}
-              {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
-            </Button>
-            <p className="text-sm text-muted-foreground text-center">
-              Don't have an account?{' '}
-              <Link href="/register" className="text-primary hover:underline font-medium">
-                Create one
-              </Link>
-            </p>
-          </CardFooter>
-        </form>
-      </Card>
+          <p className="mt-8 text-sm text-muted-foreground font-light text-center">
+            Don&apos;t have an account?{' '}
+            <Link href="/register" className="text-foreground hover:underline underline-offset-4">Create one</Link>
+          </p>
+        </div>
+      </div>
     </div>
-  );
-}
-
-function MessageSquareIcon() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-    </svg>
   );
 }

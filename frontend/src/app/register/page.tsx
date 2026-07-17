@@ -3,12 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Mail, Lock, Building, ArrowRight, AlertTriangle } from 'lucide-react';
 import { authApi } from '@/lib/api';
 
 export default function RegisterPage() {
@@ -17,145 +11,70 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  function update(field: string, value: string) {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  }
+  function update(field: string, value: string) { setForm(p => ({ ...p, [field]: value })); }
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
-
-    if (!form.orgName.trim() || !form.email.trim() || !form.password) {
-      setError('Please fill in all fields');
-      return;
-    }
-    if (form.password.length < 8) {
-      setError('Password must be at least 8 characters');
-      return;
-    }
-    if (form.password !== form.confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
+    e.preventDefault(); setError('');
+    if (form.password.length < 8) { setError('Password must be at least 8 characters'); return; }
+    if (form.password !== form.confirmPassword) { setError('Passwords do not match'); return; }
     try {
       setLoading(true);
-      const res = await authApi.register({
-        email: form.email,
-        password: form.password,
-        orgName: form.orgName,
-      });
+      const res = await authApi.register({ email: form.email, password: form.password, orgName: form.orgName });
       localStorage.setItem('accessToken', res.data.accessToken);
-      localStorage.setItem('user', JSON.stringify(res.data.user));
       router.push('/');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+      setError(err.response?.data?.message || 'Registration failed');
+    } finally { setLoading(false); }
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6">
-      <Card className="w-full max-w-md">
-        <form onSubmit={handleSubmit}>
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="text-2xl">🚀</span>
-            </div>
-            <CardTitle className="text-2xl">Create Your Account</CardTitle>
-            <CardDescription>Set up WhatsApp Triage in under 2 minutes</CardDescription>
-          </CardHeader>
+    <div className="min-h-screen flex">
+      <div className="hidden lg:flex w-1/2 bg-accent relative">
+        <div className="relative flex flex-col justify-end p-16">
+          <p className="text-xs tracking-widest uppercase text-accent-foreground/50 mb-4">WhatsApp Copilot</p>
+          <h1 className="text-4xl font-light text-accent-foreground leading-tight">
+            Set up in under<br />two minutes.
+          </h1>
+        </div>
+      </div>
 
-          <CardContent className="space-y-4">
-            {error && (
-              <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="w-full max-w-sm">
+          <div className="lg:hidden mb-10">
+            <p className="text-xs tracking-widest uppercase text-muted-foreground mb-2">WhatsApp Copilot</p>
+            <h2 className="text-3xl font-light">Create account</h2>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="orgName">Organization Name</Label>
-              <div className="relative">
-                <Building className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="orgName"
-                  type="text"
-                  placeholder="Your Business Name"
-                  className="pl-10"
-                  value={form.orgName}
-                  onChange={(e) => update('orgName', e.target.value)}
-                  disabled={loading}
-                  autoFocus
-                />
+          <h2 className="hidden lg:block text-3xl font-light mb-8">Create your account</h2>
+
+          {error && <div className="mb-6 p-3 border border-destructive/20 bg-destructive/5 text-sm text-destructive rounded-lg">{error}</div>}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {[
+              { id: 'orgName', label: 'Organization', type: 'text', placeholder: 'Your business name' },
+              { id: 'email', label: 'Email', type: 'email', placeholder: 'you@example.com' },
+              { id: 'password', label: 'Password', type: 'password', placeholder: 'Min. 8 characters' },
+              { id: 'confirmPassword', label: 'Confirm password', type: 'password', placeholder: 'Repeat password' },
+            ].map(f => (
+              <div key={f.id}>
+                <label htmlFor={f.id} className="block text-xs tracking-wide text-muted-foreground mb-1.5">{f.label}</label>
+                <input id={f.id} type={f.type} value={(form as any)[f.id]} onChange={e => update(f.id, e.target.value)}
+                  className="w-full px-0 py-2 bg-transparent border-0 border-b border-border focus:border-foreground outline-none text-base font-light transition-colors placeholder:text-muted-foreground/40"
+                  placeholder={f.placeholder} disabled={loading} />
               </div>
-            </div>
+            ))}
+            <button type="submit" disabled={loading}
+              className="w-full py-3 bg-foreground text-background text-sm font-light tracking-wide hover:opacity-90 disabled:opacity-50 transition-opacity">
+              {loading ? 'Creating account…' : 'Create account'}
+            </button>
+          </form>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  className="pl-10"
-                  value={form.email}
-                  onChange={(e) => update('email', e.target.value)}
-                  disabled={loading}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Min. 8 characters"
-                  className="pl-10"
-                  value={form.password}
-                  onChange={(e) => update('password', e.target.value)}
-                  disabled={loading}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="Repeat your password"
-                  className="pl-10"
-                  value={form.confirmPassword}
-                  onChange={(e) => update('confirmPassword', e.target.value)}
-                  disabled={loading}
-                />
-              </div>
-            </div>
-          </CardContent>
-
-          <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Creating account...' : 'Create Account'}
-              {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
-            </Button>
-            <p className="text-sm text-muted-foreground text-center">
-              Already have an account?{' '}
-              <Link href="/login" className="text-primary hover:underline font-medium">
-                Sign in
-              </Link>
-            </p>
-          </CardFooter>
-        </form>
-      </Card>
+          <p className="mt-8 text-sm text-muted-foreground font-light text-center">
+            Already have an account?{' '}
+            <Link href="/login" className="text-foreground hover:underline underline-offset-4">Sign in</Link>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

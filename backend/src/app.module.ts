@@ -14,10 +14,13 @@ import { StatsModule } from './stats/stats.module';
 import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/common.module';
 import { SeedModule } from './common/seed/seed.module';
+import { AppController } from './app.controller';
 import { DatabaseModule } from './common/database/database.module';
 import { EncryptionModule } from './common/encryption/encryption.module';
 import { MistralModule } from './common/mistral/mistral.module';
 import { EmbeddingsModule } from './common/embeddings/embeddings.module';
+import { AgentsModule } from './agents/agents.module';
+import { WorkflowsModule } from './workflows/workflows.module';
 
 @Module({
   imports: [
@@ -37,6 +40,8 @@ import { EmbeddingsModule } from './common/embeddings/embeddings.module';
     EncryptionModule,
     MistralModule,
     EmbeddingsModule,
+    AgentsModule,
+    WorkflowsModule,
     WebhookModule,
     TriageModule,
     TemplatesModule,
@@ -49,5 +54,6 @@ import { EmbeddingsModule } from './common/embeddings/embeddings.module';
     StatsModule,
     AuthModule,
   ],
+  controllers: [AppController],
 })
 export class AppModule {}

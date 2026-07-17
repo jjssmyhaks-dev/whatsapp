@@ -31,7 +31,6 @@ export class AuthController {
    * Login user
    */
   @Post('login')
-  @UseGuards(LocalAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Login user',
@@ -39,8 +38,8 @@ export class AuthController {
   })
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async login(@Request() req: { user: UserEntity }) {
-    return this.authService.login({ email: req.user.email, password: '' });
+  async login(@Body() dto: { email: string; password: string }) {
+    return this.authService.login(dto);
   }
 
   /**
