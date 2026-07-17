@@ -1,10 +1,11 @@
-import { Injectable, Logger, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Inject, Injectable, Logger, UnauthorizedException, ConflictException, forwardRef } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from '../common/database/entities/user.entity';
 import { EncryptionService } from '../common/encryption/encryption.service';
+import { SeedService } from '../common/seed/seed.service';
 
 interface JwtPayload {
   sub: string;
@@ -30,8 +31,8 @@ export class AuthService {
   constructor(
     private jwtService: JwtService,
     private encryptionService: EncryptionService,
-    @InjectRepository(User)
-    private userRepo: Repository<User>,
+    @InjectRepository(User) private userRepo: Repository<User>,
+    @Inject(forwardRef(() => SeedService)) private seedService: SeedService,
   ) {}
 
   /**
@@ -62,6 +63,13 @@ export class AuthService {
       });
 
       await this.userRepo.save(user);
+
+      // Seed default templates and urgency rules
+      try {
+        await this.seedService.seedForUser(user.id);
+      } catch (err) {
+        this.logger.warn(`Failed to seed defaults for new user: ${err.message}`);
+      }
 
       // Generate access token
       const accessToken = this.generateAccessToken(user);

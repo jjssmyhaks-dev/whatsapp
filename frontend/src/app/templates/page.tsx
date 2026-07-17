@@ -1,495 +1,252 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Edit, Trash2, Search, Filter, MoreVertical, Check, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Plus, Pencil, Trash2, Search, RefreshCw, AlertTriangle, Zap, Bot } from 'lucide-react';
 import { templatesApi } from '@/lib/api';
-import { Template } from '@/types';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-hot-toast';
-
-// Form schema
-const templateSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  triggerIntent: z.string().min(2, 'Trigger intent must be at least 2 characters'),
-  replyText: z.string().min(1, 'Reply text is required'),
-  isUrgentAcknowledgement: z.boolean().optional(),
-  responseType: z.enum(['text', 'template', 'interactive']).optional(),
-  priority: z.number().min(0).max(100).optional(),
-});
-
-type TemplateFormData = z.infer<typeof templateSchema>;
-
-// Mock data for demo
-const mockTemplates: Template[] = [
-  {
-    id: '1',
-    userId: 'user-1',
-    name: 'Urgent Acknowledgement',
-    triggerIntent: 'urgent help needed immediately',
-    triggerEmbedding: null,
-    replyText: 'Thank you for your message. We will respond shortly.',
-    active: true,
-    isUrgentAcknowledgement: true,
-    responseType: 'text',
-    metadata: {},
-    usageCount: 15,
-    lastUsedAt: new Date().toISOString(),
-    priority: 10,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    userId: 'user-1',
-    name: 'Greeting Response',
-    triggerIntent: 'hello hi hey',
-    triggerEmbedding: null,
-    replyText: 'Hello! How can we help you today?',
-    active: true,
-    isUrgentAcknowledgement: false,
-    responseType: 'text',
-    metadata: {},
-    usageCount: 25,
-    lastUsedAt: new Date().toISOString(),
-    priority: 5,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    userId: 'user-1',
-    name: 'Pricing Inquiry',
-    triggerIntent: 'price cost how much',
-    triggerEmbedding: null,
-    replyText: 'Our pricing starts at $10/month. Please visit our website for detailed plans.',
-    active: false,
-    isUrgentAcknowledgement: false,
-    responseType: 'text',
-    metadata: {},
-    usageCount: 8,
-    lastUsedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-    priority: 3,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
+import { formatRelativeTime } from '@/lib/utils';
+import type { Template } from '@/types';
 
 export default function TemplatesPage() {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState<'all' | 'active' | 'inactive' | 'urgent'>('all');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
-
-  // Use React Query for data fetching
-  const queryClient = useQueryClient();
-  
-  const { data: templates, isLoading, error } = useQuery({
-    queryKey: ['templates'],
-    queryFn: async () => {
-      // In a real implementation, fetch from API
-      // const response = await templatesApi.list();
-      // return response.data.templates;
-      return mockTemplates;
-    },
-  });
-
-  const createMutation = useMutation({
-    mutationFn: async (data: TemplateFormData) => {
-      // In a real implementation
-      // return templatesApi.create(data);
-      return { data: { ...data, id: `template-${Date.now()}` } };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['templates'] });
-      toast.success('Template created successfully');
-      setIsDialogOpen(false);
-    },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.message || 'Failed to create template');
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<TemplateFormData> }) => {
-      // In a real implementation
-      // return templatesApi.update(id, data);
-      return { data: { id, ...data } };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['templates'] });
-      toast.success('Template updated successfully');
-      setIsDialogOpen(false);
-      setEditingTemplate(null);
-    },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.message || 'Failed to update template');
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      // In a real implementation
-      // return templatesApi.delete(id);
-      return { data: { success: true } };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['templates'] });
-      toast.success('Template deleted successfully');
-    },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.message || 'Failed to delete template');
-    },
-  });
-
-  const toggleMutation = useMutation({
-    mutationFn: async (id: string) => {
-      // In a real implementation
-      // return templatesApi.toggle(id);
-      return { data: { id, active: true } };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['templates'] });
-    },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.message || 'Failed to toggle template');
-    },
-  });
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ name: '', triggerIntent: '', replyText: '', active: true, isUrgentAcknowledgement: false, priority: 0 });
 
   useEffect(() => {
-    // Check if user is authenticated
     const token = localStorage.getItem('accessToken');
-    if (!token) {
-      router.push('/login');
-    }
+    if (!token) { router.push('/login'); return; }
+    fetchTemplates();
   }, [router]);
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<TemplateFormData>({
-    resolver: zodResolver(templateSchema),
-    defaultValues: {
-      name: '',
-      triggerIntent: '',
-      replyText: '',
-      isUrgentAcknowledgement: false,
-      responseType: 'text',
-      priority: 0,
-    },
-  });
-
-  const onSubmit = (data: TemplateFormData) => {
-    if (editingTemplate) {
-      updateMutation.mutate({ id: editingTemplate.id, data });
-    } else {
-      createMutation.mutate(data);
+  async function fetchTemplates() {
+    try {
+      setLoading(true);
+      setError('');
+      const res = await templatesApi.list();
+      setTemplates(res.data.templates);
+      setTotal(res.data.total);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to load templates');
+    } finally {
+      setLoading(false);
     }
-  };
+  }
 
-  const handleEdit = (template: Template) => {
-    setEditingTemplate(template);
-    reset({
-      name: template.name,
-      triggerIntent: template.triggerIntent,
-      replyText: template.replyText,
-      isUrgentAcknowledgement: template.isUrgentAcknowledgement,
-      responseType: template.responseType,
-      priority: template.priority,
-    });
-    setIsDialogOpen(true);
-  };
+  function openCreate() {
+    setEditingTemplate(null);
+    setForm({ name: '', triggerIntent: '', replyText: '', active: true, isUrgentAcknowledgement: false, priority: 0 });
+    setDialogOpen(true);
+  }
 
-  const handleDelete = (id: string) => {
-    deleteMutation.mutate(id);
-  };
+  function openEdit(tpl: Template) {
+    setEditingTemplate(tpl);
+    setForm({ name: tpl.name, triggerIntent: tpl.triggerIntent, replyText: tpl.replyText, active: tpl.active, isUrgentAcknowledgement: tpl.isUrgentAcknowledgement, priority: tpl.priority });
+    setDialogOpen(true);
+  }
 
-  const handleToggle = (id: string) => {
-    toggleMutation.mutate(id);
-  };
-
-  const filteredTemplates = (templates || []).filter((template) => {
-    // Filter by status
-    if (filter === 'all') return true;
-    if (filter === 'active' && !template.active) return false;
-    if (filter === 'inactive' && template.active) return false;
-    if (filter === 'urgent' && !template.isUrgentAcknowledgement) return false;
-
-    // Filter by search
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      return (
-        template.name.toLowerCase().includes(query) ||
-        template.triggerIntent.toLowerCase().includes(query) ||
-        template.replyText.toLowerCase().includes(query)
-      );
+  async function handleSave() {
+    if (!form.name.trim() || !form.triggerIntent.trim() || !form.replyText.trim()) {
+      setError('Please fill all required fields');
+      return;
     }
+    try {
+      setSaving(true);
+      setError('');
+      if (editingTemplate) {
+        await templatesApi.update(editingTemplate.id, form);
+      } else {
+        await templatesApi.create(form);
+      }
+      setDialogOpen(false);
+      fetchTemplates();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to save template');
+    } finally {
+      setSaving(false);
+    }
+  }
 
-    return true;
-  });
+  async function handleDelete(id: string) {
+    if (!confirm('Are you sure you want to delete this template?')) return;
+    try {
+      await templatesApi.delete(id);
+      fetchTemplates();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to delete template');
+    }
+  }
+
+  async function handleToggle(id: string) {
+    try {
+      await templatesApi.toggle(id);
+      fetchTemplates();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to toggle template');
+    }
+  }
+
+  const filtered = search ? templates.filter(t => t.name.toLowerCase().includes(search.toLowerCase()) || t.triggerIntent.toLowerCase().includes(search.toLowerCase())) : templates;
 
   return (
     <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold">Templates</h1>
-            <p className="text-muted-foreground">Manage your auto-reply templates</p>
+            <h1 className="text-2xl font-bold">Auto-Reply Templates</h1>
+            <p className="text-muted-foreground">{total} templates • Manage auto-responses for routine messages</p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Template
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingTemplate ? 'Edit Template' : 'Add Template'}
-                </DialogTitle>
-                <DialogDescription>
-                  {editingTemplate
-                    ? 'Update your template settings'
-                    : 'Create a new template for auto-replies'}
-                </DialogDescription>
-              </DialogHeader>
-              
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Template Name</Label>
-                  <Input
-                    id="name"
-                    placeholder="e.g., Greeting Response"
-                    {...register('name')}
-                  />
-                  {errors.name && (
-                    <p className="text-sm text-destructive">{errors.name.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="triggerIntent">Trigger Intent</Label>
-                  <Input
-                    id="triggerIntent"
-                    placeholder="e.g., hello hi hey"
-                    {...register('triggerIntent')}
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    Words or phrases that trigger this template
-                  </p>
-                  {errors.triggerIntent && (
-                    <p className="text-sm text-destructive">{errors.triggerIntent.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="replyText">Reply Text</Label>
-                  <Textarea
-                    id="replyText"
-                    placeholder="e.g., Hello! How can we help you today?"
-                    rows={4}
-                    {...register('replyText')}
-                  />
-                  {errors.replyText && (
-                    <p className="text-sm text-destructive">{errors.replyText.message}</p>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="responseType">Response Type</Label>
-                    <Select defaultValue="text" {...register('responseType')}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="text">Text</SelectItem>
-                        <SelectItem value="template">Template</SelectItem>
-                        <SelectItem value="interactive">Interactive</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="priority">Priority</Label>
-                    <Input
-                      id="priority"
-                      type="number"
-                      min={0}
-                      max={100}
-                      defaultValue={0}
-                      {...register('priority', { valueAsNumber: true })}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="isUrgentAcknowledgement"
-                    {...register('isUrgentAcknowledgement')}
-                  />
-                  <Label htmlFor="isUrgentAcknowledgement" className="cursor-pointer">
-                    Urgent Acknowledgement Template
-                  </Label>
-                </div>
-
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={createMutation.isLoading || updateMutation.isLoading}>
-                    {createMutation.isLoading || updateMutation.isLoading ? 'Saving...' : 'Save'}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={fetchTemplates} disabled={loading}>
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+            <Button onClick={openCreate}>
+              <Plus className="h-4 w-4 mr-2" />New Template
+            </Button>
+          </div>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search templates..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          
-          <Select value={filter} onValueChange={setFilter as any}>
-            <SelectTrigger className="w-[180px]">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Filter" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Templates</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
-              <SelectItem value="urgent">Urgent Acknowledgement</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-        {/* Templates Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Your Templates</CardTitle>
-            <CardDescription>
-              {filteredTemplates.length} templates found
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="text-center py-8">Loading...</div>
-            ) : error ? (
-              <div className="text-center py-8 text-destructive">Error loading templates</div>
-            ) : filteredTemplates.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">No templates found</div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Trigger</TableHead>
-                    <TableHead>Reply</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Usage</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredTemplates.map((template) => (
-                    <TableRow key={template.id}>
-                      <TableCell className="font-medium">
-                        {template.name}
-                        {template.isUrgentAcknowledgement && (
-                          <Badge variant="destructive" className="ml-2 text-xs">
-                            Urgent
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {template.triggerIntent}
-                      </TableCell>
-                      <TableCell className="max-w-[200px] truncate">
-                        {template.replyText}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{template.responseType}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm text-muted-foreground">
-                          {template.usageCount} uses
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Switch
-                          checked={template.active}
-                          onCheckedChange={() => handleToggle(template.id)}
-                        />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEdit(template)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This action cannot be undone. This will permanently delete the template.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDelete(template.id)}>
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
+        {/* Info Card */}
+        <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800 mb-6">
+          <CardContent className="p-4 flex items-start gap-3">
+            <Zap className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div className="text-sm">
+              <strong className="text-blue-900 dark:text-blue-100">How templates work:</strong>
+              <p className="text-blue-700 dark:text-blue-300">
+                When a message matches a template's trigger intent (via embedding similarity ≥ 85%), the system auto-replies instantly — 
+                <strong> zero LLM cost</strong>. Keep adding templates to increase your fast-path hit rate.
+              </p>
+            </div>
           </CardContent>
         </Card>
+
+        {/* Search */}
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Search templates..." className="pl-10" value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
+
+        {/* Template Cards */}
+        {loading ? (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {[1,2,3,4,5,6].map(i => (
+              <Card key={i}><CardContent className="p-6"><div className="animate-pulse space-y-2"><div className="h-4 bg-muted rounded w-3/4" /><div className="h-3 bg-muted rounded w-1/2" /></div></CardContent></Card>
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <Bot className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-1">No Templates Yet</h3>
+              <p className="text-muted-foreground mb-4">Create your first auto-reply template to start saving time</p>
+              <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Create Template</Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filtered.map((tpl) => (
+              <Card key={tpl.id} className={!tpl.active ? 'opacity-60' : ''}>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base">{tpl.name}</CardTitle>
+                    <Switch checked={tpl.active} onCheckedChange={() => handleToggle(tpl.id)} />
+                  </div>
+                  <CardDescription className="flex items-center gap-2">
+                    {tpl.isUrgentAcknowledgement && <Badge variant="destructive" className="text-xs">Urgent Ack</Badge>}
+                    <Badge variant="outline" className="text-xs">Priority {tpl.priority}</Badge>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Trigger Intent</Label>
+                      <p className="text-sm font-medium">{tpl.triggerIntent}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Reply</Label>
+                      <p className="text-sm text-muted-foreground line-clamp-2">{tpl.replyText}</p>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span>Used {tpl.usageCount}x</span>
+                      {tpl.lastUsedAt && <span>Last: {formatRelativeTime(tpl.lastUsedAt)}</span>}
+                    </div>
+                  </div>
+                </CardContent>
+                <div className="px-6 pb-4 flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => openEdit(tpl)}>
+                    <Pencil className="h-3 w-3 mr-1" />Edit
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleDelete(tpl.id)}>
+                    <Trash2 className="h-3 w-3 mr-1" />Delete
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Create/Edit Dialog */}
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>{editingTemplate ? 'Edit Template' : 'Create Template'}</DialogTitle>
+              <DialogDescription>
+                Define the trigger phrase and auto-reply text. The system uses AI embeddings to match similar messages.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="t-name">Template Name *</Label>
+                <Input id="t-name" placeholder="e.g., Business Hours" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
+              </div>
+              <div>
+                <Label htmlFor="t-intent">Trigger Intent *</Label>
+                <Input id="t-intent" placeholder="e.g., What are your business hours?" value={form.triggerIntent} onChange={e => setForm(p => ({ ...p, triggerIntent: e.target.value }))} />
+              </div>
+              <div>
+                <Label htmlFor="t-reply">Reply Text *</Label>
+                <Textarea id="t-reply" placeholder="Auto-reply message..." rows={3} value={form.replyText} onChange={e => setForm(p => ({ ...p, replyText: e.target.value }))} />
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Switch id="t-urgent" checked={form.isUrgentAcknowledgement} onCheckedChange={v => setForm(p => ({ ...p, isUrgentAcknowledgement: v }))} />
+                  <Label htmlFor="t-urgent">Urgent Acknowledgement</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="t-priority">Priority:</Label>
+                  <Input id="t-priority" type="number" className="w-20" value={form.priority} onChange={e => setForm(p => ({ ...p, priority: parseInt(e.target.value) || 0 }))} />
+                </div>
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : editingTemplate ? 'Update' : 'Create'}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
