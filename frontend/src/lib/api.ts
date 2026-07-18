@@ -9,12 +9,17 @@ const api: AxiosInstance = axios.create({
   },
 });
 
-// Request interceptor to add auth token
+// Request interceptor to add auth token (skip auth endpoints)
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('accessToken');
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // Never attach token to auth endpoints — they don't need it and a stale
+    // token can confuse some auth middleware
+    const isAuthRoute = config.url?.startsWith('/auth/');
+    if (!isAuthRoute) {
+      const token = localStorage.getItem('accessToken');
+      if (token && config.headers) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },
@@ -28,9 +33,15 @@ api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401) {
-      // Token expired, redirect to login
-      localStorage.removeItem('accessToken');
-      window.location.href = '/login';
+      const isAuthRoute = error.config?.url?.startsWith('/auth/');
+      // Only redirect on non-auth routes (login/register return 401 on bad creds — don't redirect)
+      if (!isAuthRoute) {
+        localStorage.removeItem('accessToken');
+        // Don't redirect if already on login page
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
+      }
     }
     return Promise.reject(error);
   },
