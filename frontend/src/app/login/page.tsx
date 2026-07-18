@@ -19,7 +19,7 @@ export default function LoginPage() {
       setLoading(true);
       const res = await authApi.login({ email, password });
       localStorage.setItem('accessToken', res.data.accessToken);
-      router.push('/');
+      router.push('/dashboard');
     } catch (err: any) {
       setError('Invalid credentials');
     } finally { setLoading(false); }

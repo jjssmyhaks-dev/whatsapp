@@ -43,7 +43,7 @@ export default function RootLayout({
 
 /* ── Navigation ── */
 const NAV_ITEMS = [
-  { label: 'Dashboard', href: '/' },
+  { label: 'Dashboard', href: '/dashboard' },
   { label: 'Inbox', href: '/inbox' },
   { label: 'Templates', href: '/templates' },
   { label: 'Rules', href: '/urgency-rules' },
@@ -52,8 +52,8 @@ const NAV_ITEMS = [
 ];
 
 function AppShell({ children, activePath }: { children: React.ReactNode; activePath: string }) {
-  const isAuthPage = activePath === '/login' || activePath === '/register';
-  if (isAuthPage) return <>{children}</>;
+  const isPublicPage = activePath === '/' || activePath === '/login' || activePath === '/register' || activePath?.startsWith('/onboarding');
+  if (isPublicPage) return <>{children}</>;
 
   return (
     <div className="flex min-h-screen bg-background">

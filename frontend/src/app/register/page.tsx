@@ -1,13 +1,20 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { authApi } from '@/lib/api';
 import { ArrowRight, Sparkles } from 'lucide-react';
 
 export default function RegisterPage() {
+  return <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading…</div>}><RegisterForm /></Suspense>;
+}
+
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const seg = searchParams.get('segment') || 'contractor';
+  const isBusiness = seg === 'business';
   const [form, setForm] = useState({ orgName: '', email: '', password: '', confirmPassword: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -22,7 +29,7 @@ export default function RegisterPage() {
       setLoading(true);
       const res = await authApi.register({ email: form.email, password: form.password, orgName: form.orgName });
       localStorage.setItem('accessToken', res.data.accessToken);
-      router.push('/');
+      router.push(`/onboarding?segment=${seg}`);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed');
     } finally { setLoading(false); }
@@ -57,10 +64,11 @@ export default function RegisterPage() {
               </div>
               <span className="text-base font-semibold tracking-tight">Triage</span>
             </div>
-            <h2 className="text-3xl font-semibold tracking-tight">Create account</h2>
+            <h2 className="text-3xl font-semibold tracking-tight">Create your {isBusiness ? 'team' : ''} account</h2>
           </div>
 
-          <h2 className="hidden lg:block text-3xl font-semibold tracking-tight mb-8">Create your account</h2>
+          <h2 className="hidden lg:block text-3xl font-semibold tracking-tight mb-1">Create your {isBusiness ? 'team' : ''} account</h2>
+          <p className="hidden lg:block text-sm text-muted-foreground mb-6">{isBusiness ? 'For teams running sales, support & ops on WhatsApp' : 'For solo operators & freelancers'}</p>
 
           {error && (
             <div className="mb-6 p-3 rounded-xl border border-destructive/20 bg-destructive/5 text-sm text-destructive">

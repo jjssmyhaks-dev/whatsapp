@@ -25,6 +25,7 @@
     --input: 150 8% 88%;
     --ring: 155 52% 45%;
     --radius: 0.75rem;
+    --gradient-hero: radial-gradient(1200px 600px at 20% 0%, oklch(0.92 0.11 135 / 0.9), transparent 60%), radial-gradient(900px 500px at 90% 20%, oklch(0.88 0.09 155 / 0.7), transparent 60%);
   }
 
   .dark {
